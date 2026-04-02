@@ -82,7 +82,7 @@ export const apiClient = {
     api.get(`/versions/${versionId}/download`, { responseType: 'blob' }),
 
   suggestMetadata: (datasetId: string | number) =>
-    api.post('/ai/suggest-metadata', {
+    axios.post('/ai/suggest-metadata', {
       datasetId: Number(datasetId),
     }),
 }
