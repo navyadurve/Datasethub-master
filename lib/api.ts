@@ -82,8 +82,8 @@ export const apiClient = {
     api.get(`/versions/${versionId}/download`, { responseType: 'blob' }),
 
   suggestMetadata: (datasetId: string | number) =>
-    axios.post('https://dbms-project-u67u.onrender.com/ai/suggest-metadata', {
-      datasetId: Number(datasetId),
+    api.post('/ai/suggest-metadata', {
+      datasetId: String(datasetId),
     }),
 }
 
