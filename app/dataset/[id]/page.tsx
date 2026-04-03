@@ -32,6 +32,44 @@ interface Review {
   createdAt?: string;
 }
 
+function findSummary(value: any): string | null {
+  if (typeof value === "string") {
+    const t = value.trim();
+    if (t.length > 30) return t;
+    return null;
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = findSummary(item);
+      if (found) return found;
+    }
+    return null;
+  }
+  if (value && typeof value === "object") {
+    const keys = [
+      "summary",
+      "aiSummary",
+      "generatedSummary",
+      "description",
+      "text",
+      "content",
+      "result",
+      "message",
+    ];
+    for (const k of keys) {
+      if (k in value) {
+        const found = findSummary((value as any)[k]);
+        if (found) return found;
+      }
+    }
+    for (const key of Object.keys(value)) {
+      const found = findSummary((value as any)[key]);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
 export default function DatasetDetailPage() {
   const router = useRouter();
   const params = useParams();
@@ -199,14 +237,10 @@ export default function DatasetDetailPage() {
         console.log("7b. Response data keys:", Object.keys(response.data));
         
         const responseData = response.data;
-        
-        // Log all possible summary fields
-        console.log("7c. responseData.summary:", responseData?.summary);
-        console.log("7d. responseData.data?.summary:", responseData?.data?.summary);
-        console.log("7e. responseData.aiSummary:", responseData?.aiSummary);
-        console.log("7f. responseData.description:", responseData?.description);
-        
-        // Check for error status codes from backend
+
+        console.log('API returned:', responseData);
+        console.log('response keys:', Object.keys(responseData));
+
         const statusCode = responseData?.status;
         console.log("8. Status code:", statusCode);
         
@@ -225,27 +259,14 @@ export default function DatasetDetailPage() {
             return;
         }
         
-        // Extract summary from various possible locations in response
-        let summaryText = null;
-        
-        console.log("10. Checking for summary in response...");
-        if (typeof responseData?.summary === 'string' && responseData.summary.trim()) {
-            console.log("11a. Found summary in responseData.summary");
-            summaryText = responseData.summary.trim();
-        } else if (typeof responseData?.data?.summary === 'string' && responseData.data.summary.trim()) {
-            console.log("11b. Found summary in responseData.data.summary");
-            summaryText = responseData.data.summary.trim();
-        } else if (typeof responseData?.aiSummary === 'string' && responseData.aiSummary.trim()) {
-            console.log("11c. Found summary in responseData.aiSummary");
-            summaryText = responseData.aiSummary.trim();
-        } else if (typeof responseData?.description === 'string' && responseData.description.trim()) {
-            console.log("11d. Found summary in responseData.description");
-            summaryText = responseData.description.trim();
-        }
-        
-        console.log("12. Final summaryText:", summaryText);
-        
-        // Set summary if found
+        let summaryText =
+          findSummary(responseData) ||
+          findSummary(responseData?.data) ||
+          findSummary(responseData?.metadata) ||
+          null;
+
+        console.log('summaryText candidate:', summaryText);
+
         if (summaryText) {
             console.log("13. Setting summary");
             setAiSummary(summaryText);
@@ -261,21 +282,6 @@ export default function DatasetDetailPage() {
             setAiError('No summary generated. Please try again.');
             setAiLoading(false);
             return;
-        }
-        
-        // Update metadata if provided
-        if (responseData?.metadata && typeof responseData.metadata === "object") {
-            console.log("15. Updating metadata");
-            setDataset((prev)=>{
-                if (!prev) return prev;
-                return {
-                    ...prev,
-                    metadata: {
-                        ...prev.metadata || {},
-                        ...responseData.metadata
-                    }
-                };
-            });
         }
         
         console.log("16. Setting success message");
