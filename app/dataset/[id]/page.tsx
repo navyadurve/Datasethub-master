@@ -188,66 +188,62 @@ export default function DatasetDetailPage() {
       const response = await apiClient.suggestMetadata(datasetId);
       const responseData = response.data;
 
-      // Map backend status codes to user-friendly messages
+      // Check for error status codes from backend
       const statusCode = responseData?.status;
-      const errorMapping: Record<string, string> = {
-        'ai_success': '',
-        'api_key_missing': 'AI service is not configured. Contact the administrator to set up OPENAI_API_KEY.',
-        'api_key_invalid': 'AI service authentication failed. Please try again later.',
-        'model_invalid': 'AI model configuration is invalid. Contact the administrator.',
-        'openai_request_failed': 'OpenAI service encountered an error. Please try again.',
-        'dataset_file_missing': 'Dataset CSV file not found on server. Please re-upload the dataset.',
-        'csv_preview_failed': 'Could not read the dataset CSV file. The file may be corrupted.',
-      };
-
-      if (statusCode && statusCode !== 'ai_success' && errorMapping[statusCode]) {
-        setAiError(errorMapping[statusCode]);
+      if (statusCode && statusCode !== 'ai_success') {
+        const errorMapping: Record<string, string> = {
+          'api_key_missing': 'AI service not configured. Contact administrator to set OPENAI_API_KEY.',
+          'api_key_invalid': 'AI service authentication failed. Please try again later.',
+          'model_invalid': 'AI model configuration is invalid. Contact administrator.',
+          'openai_request_failed': 'OpenAI service error. Please try again.',
+          'dataset_file_missing': 'Dataset CSV file not found. Please re-upload the dataset.',
+          'csv_preview_failed': 'Could not read dataset file. It may be corrupted.',
+        };
+        setAiError(errorMapping[statusCode] || `Error: ${statusCode}`);
         setAiLoading(false);
         return;
       }
 
-      const extractedSummary =
-        responseData?.summary ??
-        responseData?.aiSummary ??
-        responseData?.description ??
-        responseData?.generatedDescription ??
-        responseData?.metadata?.summary ??
-        responseData?.metadata?.aiSummary ??
-        responseData?.suggestedMetadata?.summary ??
-        responseData?.suggestedMetadata?.aiSummary ??
-        responseData?.data?.summary ??
-        responseData?.data?.aiSummary ??
-        null;
+      // Extract summary from various possible locations in response
+      let summaryText = null;
 
-      const suggestedMetadata =
-        responseData?.metadata ??
-        responseData?.suggestedMetadata ??
-        responseData?.data?.metadata ??
-        null;
+      if (typeof responseData?.summary === 'string' && responseData.summary.trim()) {
+        summaryText = responseData.summary.trim();
+      } else if (typeof responseData?.data?.summary === 'string' && responseData.data.summary.trim()) {
+        summaryText = responseData.data.summary.trim();
+      } else if (typeof responseData?.aiSummary === 'string' && responseData.aiSummary.trim()) {
+        summaryText = responseData.aiSummary.trim();
+      } else if (typeof responseData?.description === 'string' && responseData.description.trim()) {
+        summaryText = responseData.description.trim();
+      }
 
-      if (suggestedMetadata && typeof suggestedMetadata === "object") {
-        setDataset((prev) => {
+      // Set summary if found
+      if (summaryText) {
+        setAiSummary(summaryText);
+        // Update dataset description with AI summary
+        setDataset((prev)=>{
           if (!prev) return prev;
+          return {
+            ...prev,
+            description: summaryText
+          };
+        });
+      } else {
+        setAiError('No summary generated. Please try again.');
+        setAiLoading(false);
+        return;
+      }
 
+      // Update metadata if provided
+      if (responseData?.metadata && typeof responseData.metadata === "object") {
+        setDataset((prev)=>{
+          if (!prev) return prev;
           return {
             ...prev,
             metadata: {
-              ...(prev.metadata || {}),
-              ...suggestedMetadata,
-            },
-          };
-        });
-      }
-
-      if (typeof extractedSummary === "string" && extractedSummary.trim()) {
-        const normalizedSummary = extractedSummary.trim();
-        setAiSummary(normalizedSummary);
-
-        setDataset((prev) => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            description: normalizedSummary,
+              ...prev.metadata || {},
+              ...responseData.metadata
+            }
           };
         });
       }
@@ -256,25 +252,26 @@ export default function DatasetDetailPage() {
     } catch (error) {
       console.error("Error generating description:", error);
       if (axios.isAxiosError(error)) {
-        const responseData = error.response?.data as
-          | { message?: string; error?: string }
-          | string
-          | undefined;
-        const serverMessage =
-          typeof responseData === "string"
-            ? responseData
-            : responseData?.message || responseData?.error;
+        const responseData = error.response?.data;
+        const statusCode = responseData?.status;
 
-        if (serverMessage?.includes("ENOENT")) {
-          setAiError(
-            "AI metadata generation failed because the source CSV is missing on the backend server. Re-upload the dataset file (or fix backend file storage/path mapping) and try again.",
-          );
+        const errorMapping: Record<string, string> = {
+          'api_key_missing': 'AI service not configured.',
+          'api_key_invalid': 'AI service authentication failed.',
+          'model_invalid': 'AI model not configured.',
+          'openai_request_failed': 'OpenAI service error.',
+          'dataset_file_missing': 'Dataset file not found. Re-upload the dataset.',
+          'csv_preview_failed': 'Cannot read dataset file.',
+        };
+
+        if (statusCode && errorMapping[statusCode]) {
+          setAiError(errorMapping[statusCode]);
         } else {
-          setAiError(
-            serverMessage ||
-              "Failed to generate AI description. Please try again.",
-          );
+          const serverMessage = typeof responseData === "string" ? responseData : responseData?.message || responseData?.error;
+          setAiError(serverMessage || "Failed to generate AI description. Please try again.");
         }
+      } else if (error instanceof Error) {
+        setAiError(error.message);
       } else {
         setAiError("Failed to generate AI description. Please try again.");
       }
