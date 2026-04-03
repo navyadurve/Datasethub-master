@@ -188,6 +188,10 @@ export default function DatasetDetailPage() {
       const response = await apiClient.suggestMetadata(datasetId);
       const responseData = response.data;
 
+      // DEBUG: Log full response to see structure
+      console.log("AI Response:", responseData);
+      console.log("Response keys:", Object.keys(responseData));
+
       // Check for error status codes from backend
       const statusCode = responseData?.status;
       if (statusCode && statusCode !== 'ai_success') {
