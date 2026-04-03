@@ -173,114 +173,138 @@ export default function DatasetDetailPage() {
   };
 
   const handleGenerateDescription = async () => {
-    const token = getAuthToken();
+    console.log("1. Starting AI generation...");
+    
+    const token = (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$api$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["getAuthToken"])();
+    console.log("2. Token check:", !!token);
+    
     if (!token) {
-      router.push(`/login?next=/dataset/${datasetId}`);
-      return;
+        console.log("3. No token, redirecting to login");
+        router.push(`/login?next=/dataset/${datasetId}`);
+        return;
     }
-
+    
     try {
-      setAiLoading(true);
-      setAiError(null);
-      setAiSuccess(null);
-      setAiSummary(null);
-
-      const response = await apiClient.suggestMetadata(datasetId);
-      const responseData = response.data;
-
-      // DEBUG: Log full response to see structure
-      console.log("AI Response:", responseData);
-      console.log("Response keys:", Object.keys(responseData));
-
-      // Check for error status codes from backend
-      const statusCode = responseData?.status;
-      if (statusCode && statusCode !== 'ai_success') {
-        const errorMapping: Record<string, string> = {
-          'api_key_missing': 'AI service not configured. Contact administrator to set OPENAI_API_KEY.',
-          'api_key_invalid': 'AI service authentication failed. Please try again later.',
-          'model_invalid': 'AI model configuration is invalid. Contact administrator.',
-          'openai_request_failed': 'OpenAI service error. Please try again.',
-          'dataset_file_missing': 'Dataset CSV file not found. Please re-upload the dataset.',
-          'csv_preview_failed': 'Could not read dataset file. It may be corrupted.',
-        };
-        setAiError(errorMapping[statusCode] || `Error: ${statusCode}`);
-        setAiLoading(false);
-        return;
-      }
-
-      // Extract summary from various possible locations in response
-      let summaryText = null;
-
-      if (typeof responseData?.summary === 'string' && responseData.summary.trim()) {
-        summaryText = responseData.summary.trim();
-      } else if (typeof responseData?.data?.summary === 'string' && responseData.data.summary.trim()) {
-        summaryText = responseData.data.summary.trim();
-      } else if (typeof responseData?.aiSummary === 'string' && responseData.aiSummary.trim()) {
-        summaryText = responseData.aiSummary.trim();
-      } else if (typeof responseData?.description === 'string' && responseData.description.trim()) {
-        summaryText = responseData.description.trim();
-      }
-
-      // Set summary if found
-      if (summaryText) {
-        setAiSummary(summaryText);
-        // Update dataset description with AI summary
-        setDataset((prev)=>{
-          if (!prev) return prev;
-          return {
-            ...prev,
-            description: summaryText
-          };
-        });
-      } else {
-        setAiError('No summary generated. Please try again.');
-        setAiLoading(false);
-        return;
-      }
-
-      // Update metadata if provided
-      if (responseData?.metadata && typeof responseData.metadata === "object") {
-        setDataset((prev)=>{
-          if (!prev) return prev;
-          return {
-            ...prev,
-            metadata: {
-              ...prev.metadata || {},
-              ...responseData.metadata
-            }
-          };
-        });
-      }
-
-      setAiSuccess("AI description generated successfully.");
-    } catch (error) {
-      console.error("Error generating description:", error);
-      if (axios.isAxiosError(error)) {
-        const responseData = error.response?.data;
+        console.log("4. Setting loading states...");
+        setAiLoading(true);
+        setAiError(null);
+        setAiSuccess(null);
+        setAiSummary(null);
+        
+        console.log("5. Calling API with datasetId:", datasetId);
+        const response = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$api$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["apiClient"].suggestMetadata(datasetId);
+        console.log("6. API Response received:", response);
+        console.log("7. Response data:", response.data);
+        
+        const responseData = response.data;
+        
+        // Check for error status codes from backend
         const statusCode = responseData?.status;
-
-        const errorMapping: Record<string, string> = {
-          'api_key_missing': 'AI service not configured.',
-          'api_key_invalid': 'AI service authentication failed.',
-          'model_invalid': 'AI model not configured.',
-          'openai_request_failed': 'OpenAI service error.',
-          'dataset_file_missing': 'Dataset file not found. Re-upload the dataset.',
-          'csv_preview_failed': 'Cannot read dataset file.',
-        };
-
-        if (statusCode && errorMapping[statusCode]) {
-          setAiError(errorMapping[statusCode]);
-        } else {
-          const serverMessage = typeof responseData === "string" ? responseData : responseData?.message || responseData?.error;
-          setAiError(serverMessage || "Failed to generate AI description. Please try again.");
+        console.log("8. Status code:", statusCode);
+        
+        if (statusCode && statusCode !== 'ai_success') {
+            console.log("9. Error status detected:", statusCode);
+            const errorMapping: Record<string, string> = {
+                'api_key_missing': 'AI service not configured. Contact administrator to set OPENAI_API_KEY.',
+                'api_key_invalid': 'AI service authentication failed. Please try again later.',
+                'model_invalid': 'AI model configuration is invalid. Contact administrator.',
+                'openai_request_failed': 'OpenAI service error. Please try again.',
+                'dataset_file_missing': 'Dataset CSV file not found. Please re-upload the dataset.',
+                'csv_preview_failed': 'Could not read dataset file. It may be corrupted.',
+            };
+            setAiError(errorMapping[statusCode] || `Error: ${statusCode}`);
+            setAiLoading(false);
+            return;
         }
-      } else if (error instanceof Error) {
-        setAiError(error.message);
-      } else {
-        setAiError("Failed to generate AI description. Please try again.");
-      }
-    } finally {
-      setAiLoading(false);
+        
+        // Extract summary from various possible locations in response
+        let summaryText = null;
+        
+        console.log("10. Checking for summary in response...");
+        if (typeof responseData?.summary === 'string' && responseData.summary.trim()) {
+            console.log("11a. Found summary in responseData.summary");
+            summaryText = responseData.summary.trim();
+        } else if (typeof responseData?.data?.summary === 'string' && responseData.data.summary.trim()) {
+            console.log("11b. Found summary in responseData.data.summary");
+            summaryText = responseData.data.summary.trim();
+        } else if (typeof responseData?.aiSummary === 'string' && responseData.aiSummary.trim()) {
+            console.log("11c. Found summary in responseData.aiSummary");
+            summaryText = responseData.aiSummary.trim();
+        } else if (typeof responseData?.description === 'string' && responseData.description.trim()) {
+            console.log("11d. Found summary in responseData.description");
+            summaryText = responseData.description.trim();
+        }
+        
+        console.log("12. Final summaryText:", summaryText);
+        
+        // Set summary if found
+        if (summaryText) {
+            console.log("13. Setting summary");
+            setAiSummary(summaryText);
+            setDataset((prev)=>{
+                if (!prev) return prev;
+                return {
+                    ...prev,
+                    description: summaryText
+                };
+            });
+        } else {
+            console.log("14. No summary found - showing error");
+            setAiError('No summary generated. Please try again.');
+            setAiLoading(false);
+            return;
+        }
+        
+        // Update metadata if provided
+        if (responseData?.metadata && typeof responseData.metadata === "object") {
+            console.log("15. Updating metadata");
+            setDataset((prev)=>{
+                if (!prev) return prev;
+                return {
+                    ...prev,
+                    metadata: {
+                        ...prev.metadata || {},
+                        ...responseData.metadata
+                    }
+                };
+            });
+        }
+        
+        console.log("16. Setting success message");
+        setAiSuccess("AI description generated successfully.");
+        
+    } catch (error) {
+        console.error("17. Catch block - Error:", error);
+        if (__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$axios$2f$lib$2f$axios$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"].isAxiosError(error)) {
+            console.error("18. Axios error response:", error.response?.data);
+            const responseData = error.response?.data;
+            const statusCode = responseData?.status;
+            
+            const errorMapping: Record<string, string> = {
+                'api_key_missing': 'AI service not configured.',
+                'api_key_invalid': 'AI service authentication failed.',
+                'model_invalid': 'AI model not configured.',
+                'openai_request_failed': 'OpenAI service error.',
+                'dataset_file_missing': 'Dataset file not found. Re-upload the dataset.',
+                'csv_preview_failed': 'Cannot read dataset file.',
+            };
+            
+            if (statusCode && errorMapping[statusCode]) {
+                setAiError(errorMapping[statusCode]);
+            } else {
+                const serverMessage = typeof responseData === "string" ? responseData : responseData?.message || responseData?.error;
+                setAiError(serverMessage || "Failed to generate AI description. Please try again.");
+            }
+        } else if (error instanceof Error) {
+            console.error("19. Regular error:", error.message);
+            setAiError(error.message);
+        } else {
+            console.error("20. Unknown error");
+            setAiError("Failed to generate AI description. Please try again.");
+        }
+    } finally{
+        console.log("21. Finally block - setting loading to false");
+        setAiLoading(false);
     }
   };
 
