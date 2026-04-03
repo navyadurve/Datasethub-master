@@ -175,7 +175,7 @@ export default function DatasetDetailPage() {
   const handleGenerateDescription = async () => {
     console.log("1. Starting AI generation...");
     
-    const token = (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$api$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["getAuthToken"])();
+    const token = getAuthToken();
     console.log("2. Token check:", !!token);
     
     if (!token) {
@@ -192,11 +192,19 @@ export default function DatasetDetailPage() {
         setAiSummary(null);
         
         console.log("5. Calling API with datasetId:", datasetId);
-        const response = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$api$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["apiClient"].suggestMetadata(datasetId);
+        const response = await apiClient.suggestMetadata(datasetId);
         console.log("6. API Response received:", response);
         console.log("7. Response data:", response.data);
+        console.log("7a. Response data type:", typeof response.data);
+        console.log("7b. Response data keys:", Object.keys(response.data));
         
         const responseData = response.data;
+        
+        // Log all possible summary fields
+        console.log("7c. responseData.summary:", responseData?.summary);
+        console.log("7d. responseData.data?.summary:", responseData?.data?.summary);
+        console.log("7e. responseData.aiSummary:", responseData?.aiSummary);
+        console.log("7f. responseData.description:", responseData?.description);
         
         // Check for error status codes from backend
         const statusCode = responseData?.status;
@@ -275,7 +283,7 @@ export default function DatasetDetailPage() {
         
     } catch (error) {
         console.error("17. Catch block - Error:", error);
-        if (__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$axios$2f$lib$2f$axios$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"].isAxiosError(error)) {
+        if (axios.isAxiosError(error)) {
             console.error("18. Axios error response:", error.response?.data);
             const responseData = error.response?.data;
             const statusCode = responseData?.status;
