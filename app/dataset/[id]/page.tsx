@@ -188,6 +188,24 @@ export default function DatasetDetailPage() {
       const response = await apiClient.suggestMetadata(datasetId);
       const responseData = response.data;
 
+      // Map backend status codes to user-friendly messages
+      const statusCode = responseData?.status;
+      const errorMapping: Record<string, string> = {
+        'ai_success': '',
+        'api_key_missing': 'AI service is not configured. Contact the administrator to set up OPENAI_API_KEY.',
+        'api_key_invalid': 'AI service authentication failed. Please try again later.',
+        'model_invalid': 'AI model configuration is invalid. Contact the administrator.',
+        'openai_request_failed': 'OpenAI service encountered an error. Please try again.',
+        'dataset_file_missing': 'Dataset CSV file not found on server. Please re-upload the dataset.',
+        'csv_preview_failed': 'Could not read the dataset CSV file. The file may be corrupted.',
+      };
+
+      if (statusCode && statusCode !== 'ai_success' && errorMapping[statusCode]) {
+        setAiError(errorMapping[statusCode]);
+        setAiLoading(false);
+        return;
+      }
+
       const extractedSummary =
         responseData?.summary ??
         responseData?.aiSummary ??
