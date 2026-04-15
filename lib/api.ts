@@ -24,6 +24,15 @@ export interface FeedbackPayload {
   comment: string
 }
 
+export interface AIResponsePayload {
+  success: boolean
+  status?: string
+  summary?: string
+  metadata?: Record<string, unknown>
+  error?: string
+  message?: string
+}
+
 const AUTH_TOKEN_KEY = 'token'
 
 export const getAuthToken = () => {
