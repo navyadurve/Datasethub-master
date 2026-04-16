@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { apiClient, setAuthToken } from "@/lib/api";
+import { apiClient, setAuthToken, setAuthUser } from "@/lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -19,12 +19,14 @@ export default function LoginPage() {
     try {
       const response = await apiClient.login({ email, password });
       const token = response.data?.token || response.data?.accessToken;
+        const user = response.data?.user || response.data?.userProfile || null;
 
       if (!token) {
         throw new Error("Token not found in login response");
       }
 
       setAuthToken(token);
+        if (user) setAuthUser(user);
       router.push("/datasets");
     } catch (err) {
       setError("Invalid email or password");

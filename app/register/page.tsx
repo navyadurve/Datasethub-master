@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { apiClient, setAuthToken } from "@/lib/api";
+import { apiClient, setAuthToken, setAuthUser } from "@/lib/api";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -62,6 +62,8 @@ export default function RegisterPage() {
 
       if (token) {
         setAuthToken(token);
+        const user = response.data?.user || response.data?.userProfile || null;
+        if (user) setAuthUser(user);
       }
 
       router.replace("/datasets");

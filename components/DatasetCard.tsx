@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import RatingStars from './RatingStars'
+import OrgTag from './OrgTag'
 
 interface DatasetCardProps {
   id: string
@@ -9,6 +10,7 @@ interface DatasetCardProps {
   description: string
   rating?: number | string | null
   credibilityScore?: number
+  organisation?: { id: string | number; name: string; role?: string }
 }
 
 export default function DatasetCard({
@@ -17,12 +19,18 @@ export default function DatasetCard({
   description,
   rating = 0,
   credibilityScore,
+  organisation,
 }: DatasetCardProps) {
   const normalizedRating = Number.isFinite(Number(rating)) ? Number(rating) : 0
 
   return (
     <Link href={`/dataset/${id}`}>
-      <div className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow cursor-pointer h-full">
+      <div className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow cursor-pointer">
+        {organisation && (
+          <div className="mb-2">
+            <OrgTag name={organisation.name} role={organisation.role} />
+          </div>
+        )}
         <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">{title}</h3>
         <p className="text-gray-600 text-sm mb-4 line-clamp-3">{description}</p>
 

@@ -12,6 +12,7 @@ interface Dataset {
   description: string;
   rating?: number;
   credibilityScore?: number;
+  organisation?: { id: string | number; name: string; role?: string }
 }
 
 export default function DatasetsPage() {
@@ -28,8 +29,11 @@ export default function DatasetsPage() {
     try {
       setLoading(true);
       const response = await apiClient.getDatasets();
-      setDatasets(response.data || []);
-      setFilteredDatasets(response.data || []);
+      const payload = response.data;
+      const list = payload?.data ?? payload ?? [];
+      const arr = Array.isArray(list) ? list : [];
+      setDatasets(arr);
+      setFilteredDatasets(arr);
     } catch (error) {
       console.error("Error fetching datasets:", error);
       setDatasets([]);
@@ -99,6 +103,7 @@ export default function DatasetsPage() {
                 description={dataset.description}
                 rating={dataset.rating}
                 credibilityScore={dataset.credibilityScore}
+                organisation={dataset.organisation}
               />
             ))}
           </div>

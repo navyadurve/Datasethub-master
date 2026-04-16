@@ -42,7 +42,11 @@ export default function AdminPendingPage() {
     setError(null)
     const fetcher = view === 'pending' ? apiClient.getAdminPendingDatasets : apiClient.getDatasets
     fetcher()
-      .then((res) => setDatasets(res.data || []))
+      .then((res) => {
+        const payload = res.data
+        const list = payload?.data ?? payload ?? []
+        setDatasets(Array.isArray(list) ? list : [])
+      })
       .catch((err) => setError(err?.response?.data?.message || err.message || 'Failed to load'))
       .finally(() => setLoading(false))
   }, [view])
@@ -95,13 +99,14 @@ export default function AdminPendingPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {datasets.map((ds) => (
-              <div key={String(ds.id)} className="relative">
+              <div key={String(ds.id)} className="flex flex-col">
                 <DatasetCard
                   id={String(ds.id)}
                   title={ds.title}
                   description={ds.description || ""}
                   rating={ds.rating}
                   credibilityScore={ds.credibilityScore}
+                  organisation={(ds as any).organisation}
                 />
 
                 <div className="mt-2 flex gap-2">
