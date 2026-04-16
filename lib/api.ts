@@ -127,6 +127,13 @@ export const apiClient = {
     datasetId: string | number,
     payload: { action: 'approve' | 'reject' | 'flag'; notes?: string }
   ) => api.post(`/admin/datasets/${datasetId}/review`, payload),
+  // Organisation endpoints
+  createOrg: (payload: { name: string; slug?: string }) => api.post('/orgs', payload),
+  getOrgMembers: (orgId: string | number) => api.get(`/orgs/${orgId}/members`),
+  addOrgMember: (orgId: string | number, payload: { userId: number; role?: 'member' | 'org_admin' }) =>
+    api.post(`/orgs/${orgId}/members`, payload),
+  removeOrgMember: (orgId: string | number, memberId: string | number) =>
+    api.delete(`/orgs/${orgId}/members/${memberId}`),
 }
 
 export default api

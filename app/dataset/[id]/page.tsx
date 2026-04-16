@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import RatingStars from "@/components/RatingStars";
+import OrgTag from "@/components/OrgTag";
 import ReviewCard from "@/components/ReviewCard";
 import { apiClient, getAuthToken } from "@/lib/api";
 import axios from "axios";
@@ -20,6 +21,7 @@ interface Dataset {
   latestVersionId?: string;
   versions?: Array<{ id: string }>;
   metadata?: Record<string, any>;
+  organisation?: { id: string | number; name: string; role?: string }
 }
 
 type MaybeId = string | number | null | undefined;
@@ -363,6 +365,12 @@ export default function DatasetDetailPage() {
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
             {dataset.title}
           </h1>
+
+          {dataset.organisation && (
+            <div className="mb-4">
+              <OrgTag name={dataset.organisation.name} role={dataset.organisation.role} />
+            </div>
+          )}
 
           <div className="flex items-center gap-6 mb-6">
             <div>
