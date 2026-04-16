@@ -34,6 +34,7 @@ export interface AIResponsePayload {
 }
 
 const AUTH_TOKEN_KEY = 'token'
+const AUTH_USER_KEY = 'user'
 
 export const getAuthToken = () => {
   if (typeof window === 'undefined') return null
@@ -43,6 +44,30 @@ export const getAuthToken = () => {
 export const setAuthToken = (token: string) => {
   if (typeof window === 'undefined') return
   localStorage.setItem(AUTH_TOKEN_KEY, token)
+}
+
+export const setAuthUser = (user: Record<string, unknown>) => {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user))
+  } catch (e) {
+    // ignore
+  }
+}
+
+export const getAuthUser = (): Record<string, unknown> | null => {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = localStorage.getItem(AUTH_USER_KEY)
+    return raw ? JSON.parse(raw) : null
+  } catch (e) {
+    return null
+  }
+}
+
+export const clearAuthUser = () => {
+  if (typeof window === 'undefined') return
+  localStorage.removeItem(AUTH_USER_KEY)
 }
 
 export const clearAuthToken = () => {
@@ -94,6 +119,14 @@ export const apiClient = {
     api.post('/ai/suggest-metadata', {
       datasetId: String(datasetId),
     }),
+
+  // Admin endpoints
+  getAdminPendingDatasets: () => api.get('/admin/datasets/pending'),
+  deleteDataset: (datasetId: string | number) => api.delete(`/datasets/${datasetId}`),
+  reviewDataset: (
+    datasetId: string | number,
+    payload: { action: 'approve' | 'reject' | 'flag'; notes?: string }
+  ) => api.post(`/admin/datasets/${datasetId}/review`, payload),
 }
 
 export default api
